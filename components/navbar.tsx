@@ -3,11 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -16,6 +19,8 @@ export function Navbar() {
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
   };
+
+  const isActive = (path: string) => pathname === path;
 
   return (
     <header className="relative w-full bg-white">
@@ -39,25 +44,45 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           <Link
             href="/browse"
-            className="text-red-600 font-bold hover:text-red-700 transition-colors"
+            className={cn(
+              "transition-colors",
+              isActive("/browse")
+                ? "text-red-600 font-bold hover:text-red-700"
+                : "text-gray-700 hover:text-gray-900"
+            )}
           >
             Browse
           </Link>
           <Link
             href="/categories"
-            className="text-gray-700 hover:text-gray-900 transition-colors"
+            className={cn(
+              "transition-colors",
+              isActive("/categories")
+                ? "text-red-600 font-bold hover:text-red-700"
+                : "text-gray-700 hover:text-gray-900"
+            )}
           >
             Categories
           </Link>
           <Link
             href="/post-request"
-            className="text-gray-700 hover:text-gray-900 transition-colors"
+            className={cn(
+              "transition-colors",
+              isActive("/post-request")
+                ? "text-red-600 font-bold hover:text-red-700"
+                : "text-gray-700 hover:text-gray-900"
+            )}
           >
             Post Request
           </Link>
           <Link
             href="/how-it-works"
-            className="text-gray-700 hover:text-gray-900 transition-colors"
+            className={cn(
+              "transition-colors",
+              isActive("/how-it-works")
+                ? "text-red-600 font-bold hover:text-red-700"
+                : "text-gray-700 hover:text-gray-900"
+            )}
           >
             How It Works
           </Link>
@@ -99,28 +124,48 @@ export function Navbar() {
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
             <Link
               href="/browse"
-              className="text-red-600 font-bold hover:text-red-700 transition-colors py-2"
+              className={cn(
+                "transition-colors py-2",
+                isActive("/browse")
+                  ? "text-red-600 font-bold hover:text-red-700"
+                  : "text-gray-700 hover:text-gray-900"
+              )}
               onClick={closeMobileMenu}
             >
               Browse
             </Link>
             <Link
               href="/categories"
-              className="text-gray-700 hover:text-gray-900 transition-colors py-2"
+              className={cn(
+                "transition-colors py-2",
+                isActive("/categories")
+                  ? "text-red-600 font-bold hover:text-red-700"
+                  : "text-gray-700 hover:text-gray-900"
+              )}
               onClick={closeMobileMenu}
             >
               Categories
             </Link>
             <Link
               href="/post-request"
-              className="text-gray-700 hover:text-gray-900 transition-colors py-2"
+              className={cn(
+                "transition-colors py-2",
+                isActive("/post-request")
+                  ? "text-red-600 font-bold hover:text-red-700"
+                  : "text-gray-700 hover:text-gray-900"
+              )}
               onClick={closeMobileMenu}
             >
               Post Request
             </Link>
             <Link
               href="/how-it-works"
-              className="text-gray-700 hover:text-gray-900 transition-colors py-2"
+              className={cn(
+                "transition-colors py-2",
+                isActive("/how-it-works")
+                  ? "text-red-600 font-bold hover:text-red-700"
+                  : "text-gray-700 hover:text-gray-900"
+              )}
               onClick={closeMobileMenu}
             >
               How It Works
