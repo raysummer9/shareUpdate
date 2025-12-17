@@ -100,9 +100,9 @@ export function Hero() {
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.3 }}
-        className="w-full lg:w-1/2 relative overflow-hidden flex items-center justify-center p-8"
+        className="hidden lg:flex w-full lg:w-1/2 relative overflow-hidden items-center justify-center p-8 min-h-[400px]"
       >
-        <div className="relative w-full h-full max-w-2xl">
+        <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] max-w-2xl">
           <Image
             src="/hero-img.png"
             alt="Hero illustration"
