@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Share Update - Marketplace MVP",
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body className="font-liberation">
         <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );
