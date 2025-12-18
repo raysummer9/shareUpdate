@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/types";
 
@@ -65,9 +65,24 @@ export function useOrders(filters?: OrderFilters) {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+
+  // Memoize filter values to prevent infinite loops
+  const buyerId = filters?.buyer_id;
+  const sellerId = filters?.seller_id;
+  const listingId = filters?.listing_id;
+  const status = filters?.status;
+  const limit = filters?.limit;
+  const offset = filters?.offset;
 
   const fetchOrders = useCallback(async () => {
+    // If no buyer_id or seller_id provided, don't fetch (prevents fetching all orders)
+    if (!buyerId && !sellerId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -99,44 +114,36 @@ export function useOrders(filters?: OrderFilters) {
         `, { count: "exact" });
 
       // Apply filters
-      if (filters?.buyer_id) {
-        query = query.eq("buyer_id", filters.buyer_id);
+      if (buyerId) {
+        query = query.eq("buyer_id", buyerId);
       }
 
-      if (filters?.seller_id) {
-        query = query.eq("seller_id", filters.seller_id);
+      if (sellerId) {
+        query = query.eq("seller_id", sellerId);
       }
 
-      if (filters?.listing_id) {
-        query = query.eq("listing_id", filters.listing_id);
+      if (listingId) {
+        query = query.eq("listing_id", listingId);
       }
 
-      if (filters?.status) {
-        if (Array.isArray(filters.status)) {
-          query = query.in("status", filters.status);
+      if (status) {
+        if (Array.isArray(status)) {
+          query = query.in("status", status);
         } else {
-          query = query.eq("status", filters.status);
+          query = query.eq("status", status);
         }
-      }
-
-      if (filters?.from_date) {
-        query = query.gte("created_at", filters.from_date);
-      }
-
-      if (filters?.to_date) {
-        query = query.lte("created_at", filters.to_date);
       }
 
       // Sort by newest first
       query = query.order("created_at", { ascending: false });
 
       // Apply pagination
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (limit) {
+        query = query.limit(limit);
       }
 
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+      if (offset) {
+        query = query.range(offset, offset + (limit || 10) - 1);
       }
 
       const { data, error: fetchError, count } = await query;
@@ -151,7 +158,7 @@ export function useOrders(filters?: OrderFilters) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, filters]);
+  }, [supabase, buyerId, sellerId, listingId, status, limit, offset]);
 
   useEffect(() => {
     fetchOrders();
@@ -166,7 +173,7 @@ export function useOrder(orderId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!orderId) {
@@ -235,7 +242,7 @@ export function useOrderMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Create a new order
   const createOrder = async (orderData: {
@@ -387,7 +394,7 @@ export function useOrderStats(userId: string | null, role: "buyer" | "seller") {
   });
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!userId) {

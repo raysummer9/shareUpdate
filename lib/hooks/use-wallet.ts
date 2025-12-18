@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/types";
 
@@ -34,7 +34,7 @@ export function useWallet(userId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchWallet = useCallback(async () => {
     if (!userId) {
@@ -78,7 +78,13 @@ export function useWalletTransactions(walletId: string | null, filters?: Transac
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+
+  // Memoize filter values to prevent infinite loops
+  const filterType = filters?.type;
+  const filterStatus = filters?.status;
+  const filterLimit = filters?.limit;
+  const filterOffset = filters?.offset;
 
   const fetchTransactions = useCallback(async () => {
     if (!walletId) {
@@ -97,36 +103,28 @@ export function useWalletTransactions(walletId: string | null, filters?: Transac
         .eq("wallet_id", walletId);
 
       // Apply filters
-      if (filters?.type) {
-        if (Array.isArray(filters.type)) {
-          query = query.in("type", filters.type);
+      if (filterType) {
+        if (Array.isArray(filterType)) {
+          query = query.in("type", filterType);
         } else {
-          query = query.eq("type", filters.type);
+          query = query.eq("type", filterType);
         }
       }
 
-      if (filters?.status) {
-        query = query.eq("status", filters.status);
-      }
-
-      if (filters?.from_date) {
-        query = query.gte("created_at", filters.from_date);
-      }
-
-      if (filters?.to_date) {
-        query = query.lte("created_at", filters.to_date);
+      if (filterStatus) {
+        query = query.eq("status", filterStatus);
       }
 
       // Sort by newest first
       query = query.order("created_at", { ascending: false });
 
       // Apply pagination
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (filterLimit) {
+        query = query.limit(filterLimit);
       }
 
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+      if (filterOffset) {
+        query = query.range(filterOffset, filterOffset + (filterLimit || 10) - 1);
       }
 
       const { data, error: fetchError, count } = await query;
@@ -141,7 +139,7 @@ export function useWalletTransactions(walletId: string | null, filters?: Transac
     } finally {
       setLoading(false);
     }
-  }, [walletId, filters, supabase]);
+  }, [walletId, supabase, filterType, filterStatus, filterLimit, filterOffset]);
 
   useEffect(() => {
     fetchTransactions();
@@ -156,7 +154,7 @@ export function useBankAccounts(userId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchAccounts = useCallback(async () => {
     if (!userId) {
@@ -198,7 +196,7 @@ export function useWalletMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Add bank account
   const addBankAccount = async (
@@ -357,7 +355,7 @@ export function useWalletStats(walletId: string | null) {
   });
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!walletId) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/types";
 
@@ -45,7 +45,20 @@ export function useListings(filters?: ListingFilters) {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+
+  // Memoize filter values to prevent infinite loops
+  const filterStatus = filters?.status;
+  const filterCategoryId = filters?.category_id;
+  const filterType = filters?.type;
+  const filterSellerId = filters?.seller_id;
+  const filterPlatform = filters?.platform;
+  const filterMinPrice = filters?.min_price;
+  const filterMaxPrice = filters?.max_price;
+  const filterSearch = filters?.search;
+  const filterSortBy = filters?.sort_by;
+  const filterLimit = filters?.limit;
+  const filterOffset = filters?.offset;
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -72,43 +85,43 @@ export function useListings(filters?: ListingFilters) {
         `, { count: "exact" });
 
       // Apply filters
-      if (filters?.status) {
-        query = query.eq("status", filters.status);
+      if (filterStatus) {
+        query = query.eq("status", filterStatus);
       } else {
         // Default to active listings for public views
         query = query.eq("status", "active");
       }
 
-      if (filters?.category_id) {
-        query = query.eq("category_id", filters.category_id);
+      if (filterCategoryId) {
+        query = query.eq("category_id", filterCategoryId);
       }
 
-      if (filters?.type) {
-        query = query.eq("type", filters.type);
+      if (filterType) {
+        query = query.eq("type", filterType);
       }
 
-      if (filters?.seller_id) {
-        query = query.eq("seller_id", filters.seller_id);
+      if (filterSellerId) {
+        query = query.eq("seller_id", filterSellerId);
       }
 
-      if (filters?.platform) {
-        query = query.eq("platform", filters.platform);
+      if (filterPlatform) {
+        query = query.eq("platform", filterPlatform);
       }
 
-      if (filters?.min_price !== undefined) {
-        query = query.gte("price", filters.min_price);
+      if (filterMinPrice !== undefined) {
+        query = query.gte("price", filterMinPrice);
       }
 
-      if (filters?.max_price !== undefined) {
-        query = query.lte("price", filters.max_price);
+      if (filterMaxPrice !== undefined) {
+        query = query.lte("price", filterMaxPrice);
       }
 
-      if (filters?.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      if (filterSearch) {
+        query = query.or(`title.ilike.%${filterSearch}%,description.ilike.%${filterSearch}%`);
       }
 
       // Apply sorting
-      switch (filters?.sort_by) {
+      switch (filterSortBy) {
         case "price_asc":
           query = query.order("price", { ascending: true });
           break;
@@ -127,12 +140,12 @@ export function useListings(filters?: ListingFilters) {
       }
 
       // Apply pagination
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (filterLimit) {
+        query = query.limit(filterLimit);
       }
 
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+      if (filterOffset) {
+        query = query.range(filterOffset, filterOffset + (filterLimit || 10) - 1);
       }
 
       const { data, error: fetchError, count } = await query;
@@ -147,7 +160,7 @@ export function useListings(filters?: ListingFilters) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, filters]);
+  }, [supabase, filterStatus, filterCategoryId, filterType, filterSellerId, filterPlatform, filterMinPrice, filterMaxPrice, filterSearch, filterSortBy, filterLimit, filterOffset]);
 
   useEffect(() => {
     fetchListings();
@@ -162,7 +175,7 @@ export function useListing(listingId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!listingId) {
@@ -230,7 +243,7 @@ export function useMyListings(sellerId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchMyListings = useCallback(async () => {
     if (!sellerId) {
@@ -279,7 +292,7 @@ export function useListingMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Create a new listing
   const createListing = async (listing: ListingInsert): Promise<Listing | null> => {

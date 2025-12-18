@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useWallet, useWalletTransactions } from "@/lib/hooks/use-wallet";
+import { useWalletTransactions } from "@/lib/hooks/use-wallet";
 import { useOrders, useOrderStats } from "@/lib/hooks/use-orders";
 import { useMyListings } from "@/lib/hooks/use-listings";
 
@@ -272,10 +272,9 @@ function ListingItem({
 }
 
 export default function SellerDashboardPage() {
-  const { user, profile, loading: authLoading } = useAuth();
-  const { wallet, loading: walletLoading } = useWallet(user?.id ?? null);
-  const { transactions, loading: txLoading } = useWalletTransactions(wallet?.id ?? null, { limit: 3 });
-  const { stats: orderStats, loading: statsLoading } = useOrderStats(user?.id ?? null, "seller");
+  const { user, profile, wallet: authWallet, loading: authLoading } = useAuth();
+  const { transactions, loading: txLoading } = useWalletTransactions(authWallet?.id ?? null, { limit: 3 });
+  const { stats: orderStats } = useOrderStats(user?.id ?? null, "seller");
   const { orders, loading: ordersLoading } = useOrders({ seller_id: user?.id ?? undefined, limit: 3 });
   const { listings, loading: listingsLoading } = useMyListings(user?.id ?? null);
 
@@ -297,8 +296,8 @@ export default function SellerDashboardPage() {
     });
   };
 
-  // Show loading state
-  if (authLoading || walletLoading) {
+  // Show loading state only for initial auth
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-red-600" />
@@ -307,9 +306,9 @@ export default function SellerDashboardPage() {
   }
 
   const firstName = profile?.full_name?.split(" ")[0] || profile?.username || "Seller";
-  const availableBalance = wallet?.available_balance || 0;
-  const pendingBalance = wallet?.pending_balance || 0;
-  const totalEarned = wallet?.total_earned || 0;
+  const availableBalance = authWallet?.available_balance || 0;
+  const pendingBalance = authWallet?.pending_balance || 0;
+  const totalEarned = authWallet?.total_earned || 0;
   const activeListings = listings?.filter(l => l.status === "active") || [];
 
   return (
@@ -320,7 +319,7 @@ export default function SellerDashboardPage() {
           Welcome back, {firstName}!
         </h1>
         <p className="text-gray-600 mt-1">
-          Here's what's happening with your account today.
+          Here&apos;s what&apos;s happening with your account today.
         </p>
       </div>
 
@@ -518,7 +517,7 @@ export default function SellerDashboardPage() {
                   cancelled: { color: "bg-gray-100 text-gray-700", label: "Cancelled" },
                   disputed: { color: "bg-red-100 text-red-700", label: "Disputed" },
                 };
-                const status = statusConfig[order.status] || statusConfig.pending;
+                const status = statusConfig[order.status || "pending"] || statusConfig.pending;
                 return (
                   <OrderItem
                     key={order.id}

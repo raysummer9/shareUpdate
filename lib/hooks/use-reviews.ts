@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/types";
 
@@ -41,7 +41,15 @@ export function useReviews(filters?: ReviewFilters) {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+
+  // Memoize filter values to prevent infinite loops
+  const filterListingId = filters?.listing_id;
+  const filterRevieweeId = filters?.reviewee_id;
+  const filterReviewerId = filters?.reviewer_id;
+  const filterMinRating = filters?.min_rating;
+  const filterLimit = filters?.limit;
+  const filterOffset = filters?.offset;
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -68,32 +76,32 @@ export function useReviews(filters?: ReviewFilters) {
         .eq("is_public", true);
 
       // Apply filters
-      if (filters?.listing_id) {
-        query = query.eq("listing_id", filters.listing_id);
+      if (filterListingId) {
+        query = query.eq("listing_id", filterListingId);
       }
 
-      if (filters?.reviewee_id) {
-        query = query.eq("reviewee_id", filters.reviewee_id);
+      if (filterRevieweeId) {
+        query = query.eq("reviewee_id", filterRevieweeId);
       }
 
-      if (filters?.reviewer_id) {
-        query = query.eq("reviewer_id", filters.reviewer_id);
+      if (filterReviewerId) {
+        query = query.eq("reviewer_id", filterReviewerId);
       }
 
-      if (filters?.min_rating !== undefined) {
-        query = query.gte("rating", filters.min_rating);
+      if (filterMinRating !== undefined) {
+        query = query.gte("rating", filterMinRating);
       }
 
       // Sort by newest first
       query = query.order("created_at", { ascending: false });
 
       // Apply pagination
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (filterLimit) {
+        query = query.limit(filterLimit);
       }
 
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+      if (filterOffset) {
+        query = query.range(filterOffset, filterOffset + (filterLimit || 10) - 1);
       }
 
       const { data, error: fetchError, count } = await query;
@@ -108,7 +116,7 @@ export function useReviews(filters?: ReviewFilters) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, filters]);
+  }, [supabase, filterListingId, filterRevieweeId, filterReviewerId, filterMinRating, filterLimit, filterOffset]);
 
   useEffect(() => {
     fetchReviews();
@@ -123,7 +131,7 @@ export function useMyGivenReviews(reviewerId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!reviewerId) {
@@ -185,7 +193,7 @@ export function useMyReceivedReviews(revieweeId: string | null) {
     distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
   });
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!revieweeId) {
@@ -260,7 +268,7 @@ export function usePendingReviews(buyerId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!buyerId) {
@@ -333,7 +341,7 @@ export function useReviewMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Create a review (buyer)
   const createReview = async (reviewData: {

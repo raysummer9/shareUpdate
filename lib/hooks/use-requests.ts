@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/lib/supabase/types";
 
@@ -31,8 +31,8 @@ export interface BidWithSeller extends RequestBid {
     full_name: string;
     avatar_url: string | null;
     rating: number | null;
-    is_verified: boolean;
-    total_sales: number;
+    is_verified: boolean | null;
+    total_sales: number | null;
   };
 }
 
@@ -54,7 +54,17 @@ export function useRequests(filters?: RequestFilters) {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+
+  // Memoize filter values to prevent infinite loops
+  const filterStatus = filters?.status;
+  const filterCategoryId = filters?.category_id;
+  const filterBuyerId = filters?.buyer_id;
+  const filterMinBudget = filters?.min_budget;
+  const filterMaxBudget = filters?.max_budget;
+  const filterSearch = filters?.search;
+  const filterLimit = filters?.limit;
+  const filterOffset = filters?.offset;
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -79,43 +89,43 @@ export function useRequests(filters?: RequestFilters) {
         `, { count: "exact" });
 
       // Apply filters
-      if (filters?.status) {
-        query = query.eq("status", filters.status);
+      if (filterStatus) {
+        query = query.eq("status", filterStatus);
       } else {
         // Default to active requests
         query = query.eq("status", "active");
       }
 
-      if (filters?.category_id) {
-        query = query.eq("category_id", filters.category_id);
+      if (filterCategoryId) {
+        query = query.eq("category_id", filterCategoryId);
       }
 
-      if (filters?.buyer_id) {
-        query = query.eq("buyer_id", filters.buyer_id);
+      if (filterBuyerId) {
+        query = query.eq("buyer_id", filterBuyerId);
       }
 
-      if (filters?.min_budget !== undefined) {
-        query = query.gte("budget_max", filters.min_budget);
+      if (filterMinBudget !== undefined) {
+        query = query.gte("budget_max", filterMinBudget);
       }
 
-      if (filters?.max_budget !== undefined) {
-        query = query.lte("budget_min", filters.max_budget);
+      if (filterMaxBudget !== undefined) {
+        query = query.lte("budget_min", filterMaxBudget);
       }
 
-      if (filters?.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      if (filterSearch) {
+        query = query.or(`title.ilike.%${filterSearch}%,description.ilike.%${filterSearch}%`);
       }
 
       // Sort by newest first
       query = query.order("created_at", { ascending: false });
 
       // Apply pagination
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (filterLimit) {
+        query = query.limit(filterLimit);
       }
 
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+      if (filterOffset) {
+        query = query.range(filterOffset, filterOffset + (filterLimit || 10) - 1);
       }
 
       const { data, error: fetchError, count } = await query;
@@ -130,7 +140,7 @@ export function useRequests(filters?: RequestFilters) {
     } finally {
       setLoading(false);
     }
-  }, [supabase, filters]);
+  }, [supabase, filterStatus, filterCategoryId, filterBuyerId, filterMinBudget, filterMaxBudget, filterSearch, filterLimit, filterOffset]);
 
   useEffect(() => {
     fetchRequests();
@@ -145,7 +155,7 @@ export function useRequest(requestId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchRequest = useCallback(async () => {
     if (!requestId) {
@@ -232,7 +242,7 @@ export function useMyRequests(buyerId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchMyRequests = useCallback(async () => {
     if (!buyerId) {
@@ -278,11 +288,11 @@ export function useMyRequests(buyerId: string | null) {
 
 // Hook for seller's bids
 export function useMyBids(sellerId: string | null) {
-  const [bids, setBids] = useState<(RequestBid & { request?: RequestWithDetails })[]>([]);
+  const [bids, setBids] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchMyBids = useCallback(async () => {
     if (!sellerId) {
@@ -346,7 +356,7 @@ export function useRequestMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Create a new request (buyer)
   const createRequest = async (request: Omit<BuyerRequestInsert, "buyer_id"> & { buyer_id: string }): Promise<BuyerRequest | null> => {
@@ -449,7 +459,7 @@ export function useBidMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Submit a bid (seller)
   const submitBid = async (bid: Omit<RequestBidInsert, "id">): Promise<RequestBid | null> => {
@@ -471,8 +481,19 @@ export function useBidMutations() {
         throw createError;
       }
 
-      // Update bid count on the request
-      await supabase.rpc("increment_bid_count", { request_id: bid.request_id });
+      // Update bid count on the request (increment manually)
+      const { data: requestData } = await supabase
+        .from("buyer_requests")
+        .select("bid_count")
+        .eq("id", bid.request_id)
+        .single();
+      
+      if (requestData) {
+        await supabase
+          .from("buyer_requests")
+          .update({ bid_count: (requestData.bid_count || 0) + 1 })
+          .eq("id", bid.request_id);
+      }
 
       return data;
     } catch (err) {

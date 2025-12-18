@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useWallet } from "@/lib/hooks/use-wallet";
 import { useOrders, useOrderStats } from "@/lib/hooks/use-orders";
 import { useMyRequests } from "@/lib/hooks/use-requests";
 import { useListings } from "@/lib/hooks/use-listings";
@@ -330,9 +329,8 @@ function RecommendedItem({
 }
 
 export default function BuyerDashboardPage() {
-  const { user, profile, loading: authLoading } = useAuth();
-  const { wallet, loading: walletLoading } = useWallet(user?.id ?? null);
-  const { stats: orderStats, loading: statsLoading } = useOrderStats(user?.id ?? null, "buyer");
+  const { user, profile, wallet, loading: authLoading } = useAuth();
+  const { stats: orderStats } = useOrderStats(user?.id ?? null, "buyer");
   const { orders, loading: ordersLoading } = useOrders({ buyer_id: user?.id ?? undefined, limit: 4 });
   const { requests, loading: requestsLoading } = useMyRequests(user?.id ?? null);
   const { listings: recommended, loading: recommendedLoading } = useListings({ status: "active", limit: 3 });
@@ -355,8 +353,8 @@ export default function BuyerDashboardPage() {
     });
   };
 
-  // Show loading state
-  if (authLoading || walletLoading) {
+  // Show loading state only for initial auth
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-red-600" />
