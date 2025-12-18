@@ -58,7 +58,7 @@ The account has excellent engagement rates (4.2% average) and a highly active au
     verified: true,
     rating: 4.9,
     reviews: 1234,
-    avatar: "/placeholder-avatar.png",
+    avatar: "/placeholder-image.png",
   },
   safetyTips: [
     "Change password immediately after purchase",
