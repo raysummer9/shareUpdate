@@ -14,7 +14,7 @@ const sampleProducts: Product[] = [
   {
     id: "1",
     title: "Premium Instagram Account - Fashion Niche",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "Instagram",
     platformColor: "text-pink-700",
     platformBg: "bg-pink-100",
@@ -27,7 +27,7 @@ const sampleProducts: Product[] = [
   {
     id: "2",
     title: "Monetized YouTube Channel - Tech Reviews",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "YouTube",
     platformColor: "text-red-700",
     platformBg: "bg-red-100",
@@ -40,7 +40,7 @@ const sampleProducts: Product[] = [
   {
     id: "3",
     title: "Verified Twitter Account - Crypto Niche",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "Twitter",
     platformColor: "text-blue-700",
     platformBg: "bg-blue-100",
@@ -53,7 +53,7 @@ const sampleProducts: Product[] = [
   {
     id: "4",
     title: "Viral TikTok Account - Comedy Content",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "TikTok",
     platformColor: "text-gray-900",
     platformBg: "bg-gray-100",
@@ -66,7 +66,7 @@ const sampleProducts: Product[] = [
   {
     id: "5",
     title: "Canva Pro Account - 1 Year Subscription",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "SaaS",
     platformColor: "text-purple-700",
     platformBg: "bg-purple-100",
@@ -79,7 +79,7 @@ const sampleProducts: Product[] = [
   {
     id: "6",
     title: "Epic Games Account - Fortnite Skins",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "Gaming",
     platformColor: "text-green-700",
     platformBg: "bg-green-100",
@@ -92,7 +92,7 @@ const sampleProducts: Product[] = [
   {
     id: "7",
     title: "Spotify Premium Account - 6 Months",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "Music",
     platformColor: "text-green-700",
     platformBg: "bg-green-100",
@@ -105,7 +105,7 @@ const sampleProducts: Product[] = [
   {
     id: "8",
     title: "Professional LinkedIn Account - Tech Industry",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "LinkedIn",
     platformColor: "text-blue-700",
     platformBg: "bg-blue-100",
@@ -118,7 +118,7 @@ const sampleProducts: Product[] = [
   {
     id: "9",
     title: "Netflix Premium Account - 3 Months",
-    image: "/placeholder-product.jpg",
+    image: "/placeholder-image.png",
     platform: "Streaming",
     platformColor: "text-red-700",
     platformBg: "bg-red-100",
