@@ -5,50 +5,50 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  Wallet,
   ShoppingBag,
-  List,
   FileText,
+  Heart,
+  Wallet,
   RefreshCw,
   Star,
   AlertCircle,
-  PlusCircle,
-  Briefcase,
   Search,
+  PlusCircle,
+  CreditCard,
   X,
   MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface SellerSidebarProps {
+interface BuyerSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 const mainNavItems = [
-  { label: "Overview", href: "/seller", icon: Home },
-  { label: "Messages", href: "/seller/messages", icon: MessageSquare, badge: 4 },
-  { label: "Wallet", href: "/seller/wallet", icon: Wallet },
-  { label: "My Orders", href: "/seller/orders", icon: ShoppingBag, badge: 3 },
-  { label: "My Listings", href: "/seller/listings", icon: List },
-  { label: "My Requests", href: "/seller/requests", icon: FileText },
-  { label: "Active Trades", href: "/seller/trades", icon: RefreshCw, badge: 2 },
-  { label: "Reviews", href: "/seller/reviews", icon: Star },
-  { label: "Disputes", href: "/seller/disputes", icon: AlertCircle },
+  { label: "Overview", href: "/buyer", icon: Home },
+  { label: "Messages", href: "/buyer/messages", icon: MessageSquare, badge: 3 },
+  { label: "My Purchases", href: "/buyer/purchases", icon: ShoppingBag, badge: 5 },
+  { label: "My Requests", href: "/buyer/requests", icon: FileText, badge: 2 },
+  { label: "Wishlist", href: "/buyer/wishlist", icon: Heart, badge: 3 },
+  { label: "Wallet", href: "/buyer/wallet", icon: Wallet },
+  { label: "Active Trades", href: "/buyer/trades", icon: RefreshCw, badge: 1 },
+  { label: "Reviews", href: "/buyer/reviews", icon: Star },
+  { label: "Disputes", href: "/buyer/disputes", icon: AlertCircle },
 ];
 
 const quickActions = [
-  { label: "List Product", href: "/seller/list-product", icon: PlusCircle },
-  { label: "Offer Service", href: "/seller/offer-service", icon: Briefcase },
-  { label: "Browse Marketplace", href: "/browse", icon: Search },
+  { label: "Browse Products", href: "/browse", icon: Search },
+  { label: "Post Request", href: "/buyer/post-request", icon: PlusCircle },
+  { label: "Add Funds", href: "/buyer/wallet/add", icon: CreditCard },
 ];
 
-export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
+export function BuyerSidebar({ isOpen, onClose }: BuyerSidebarProps) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/seller") {
-      return pathname === "/seller";
+    if (href === "/buyer") {
+      return pathname === "/buyer";
     }
     return pathname.startsWith(href);
   };
@@ -91,7 +91,7 @@ export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
 
         {/* Dashboard Label */}
         <div className="px-4 py-3">
-          <span className="text-sm font-medium text-gray-500">Seller Dashboard</span>
+          <span className="text-sm font-medium text-gray-500">Buyer Dashboard</span>
         </div>
 
         {/* Main Navigation */}
@@ -115,7 +115,7 @@ export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
                     <IconComponent className={cn("h-5 w-5", active ? "text-red-600" : "text-gray-500")} />
                     <span className="flex-1">{item.label}</span>
                     {item.badge && (
-                      <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                         {item.badge}
                       </span>
                     )}
@@ -163,8 +163,8 @@ export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
               />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">John Doe</p>
-              <p className="text-xs text-gray-500">Verified Seller</p>
+              <p className="text-sm font-semibold text-gray-900">Michael Chen</p>
+              <p className="text-xs text-gray-500">Verified Buyer</p>
             </div>
           </div>
         </div>
