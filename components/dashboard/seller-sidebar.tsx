@@ -20,23 +20,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useUnreadMessageCount } from "@/lib/hooks/use-messages";
+import { useOrderStats } from "@/lib/hooks/use-orders";
 
 interface SellerSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const mainNavItems = [
-  { label: "Overview", href: "/seller", icon: Home },
-  { label: "Messages", href: "/seller/messages", icon: MessageSquare, badge: 4 },
-  { label: "Wallet", href: "/seller/wallet", icon: Wallet },
-  { label: "My Orders", href: "/seller/orders", icon: ShoppingBag, badge: 3 },
-  { label: "My Listings", href: "/seller/listings", icon: List },
-  { label: "My Requests", href: "/seller/requests", icon: FileText },
-  { label: "Active Trades", href: "/seller/trades", icon: RefreshCw, badge: 2 },
-  { label: "Reviews", href: "/seller/reviews", icon: Star },
-  { label: "Disputes", href: "/seller/disputes", icon: AlertCircle },
-];
 
 const quickActions = [
   { label: "List Product", href: "/seller/list-product", icon: PlusCircle },
@@ -46,7 +36,22 @@ const quickActions = [
 
 export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
   const pathname = usePathname();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
+  const { count: unreadMessages } = useUnreadMessageCount(user?.id ?? null);
+  const { stats: orderStats } = useOrderStats(user?.id ?? null, "seller");
+
+  // Build nav items with dynamic badges
+  const mainNavItems = [
+    { label: "Overview", href: "/seller", icon: Home },
+    { label: "Messages", href: "/seller/messages", icon: MessageSquare, badge: unreadMessages || undefined },
+    { label: "Wallet", href: "/seller/wallet", icon: Wallet },
+    { label: "My Orders", href: "/seller/orders", icon: ShoppingBag, badge: orderStats.pending > 0 ? orderStats.pending : undefined },
+    { label: "My Listings", href: "/seller/listings", icon: List },
+    { label: "My Requests", href: "/seller/requests", icon: FileText },
+    { label: "Active Trades", href: "/seller/trades", icon: RefreshCw, badge: orderStats.processing > 0 ? orderStats.processing : undefined },
+    { label: "Reviews", href: "/seller/reviews", icon: Star },
+    { label: "Disputes", href: "/seller/disputes", icon: AlertCircle, badge: orderStats.disputed > 0 ? orderStats.disputed : undefined },
+  ];
 
   const isActive = (href: string) => {
     if (href === "/seller") {

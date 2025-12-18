@@ -777,23 +777,27 @@ The frontend will connect to Supabase using:
 - [x] Reviews hooks
 - [x] Connect dashboard pages to real data (seller & buyer overviews)
 
-### Phase 4: Communication (Pending)
-- [ ] Real-time messaging setup
-- [ ] Notification system
-- [ ] Reviews and replies
+### Phase 5: Communication ✅ COMPLETED
+- [x] Real-time messaging hooks (useConversations, useMessages, useMessageMutations)
+- [x] Notification hooks (useNotifications, useNotificationMutations)
+- [x] Supabase Realtime subscriptions for live updates
+- [x] Sidebar message badges with real unread counts
+- [x] Helper functions for order, message, and review notifications
+- [ ] Connect messages pages to real data (UI integration pending)
 
-### Phase 5: Advanced Features (Pending)
-- [ ] Dispute management
-- [ ] Search optimization
-- [ ] File uploads (Supabase Storage)
+### Phase 6: Advanced Features (Pending)
+- [ ] Dispute management hooks
+- [ ] Search optimization (full-text search)
+- [ ] File uploads (Supabase Storage integration)
+- [ ] Wishlist hooks
 
-### Phase 6: Payment Integration (Pending)
+### Phase 7: Payment Integration (Pending)
 - [ ] Payment gateway integration (Paystack/Flutterwave)
 - [ ] Deposit flow
 - [ ] Withdrawal processing
 - [ ] Webhook handling
 
-### Phase 7: Admin Dashboard (Future)
+### Phase 8: Admin Dashboard (Future)
 - [ ] Admin authentication
 - [ ] User management
 - [ ] Content moderation

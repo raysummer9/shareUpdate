@@ -20,23 +20,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useUnreadMessageCount } from "@/lib/hooks/use-messages";
+import { useOrderStats } from "@/lib/hooks/use-orders";
+import { useMyRequests } from "@/lib/hooks/use-requests";
 
 interface BuyerSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const mainNavItems = [
-  { label: "Overview", href: "/buyer", icon: Home },
-  { label: "Messages", href: "/buyer/messages", icon: MessageSquare, badge: 3 },
-  { label: "My Purchases", href: "/buyer/purchases", icon: ShoppingBag, badge: 5 },
-  { label: "My Requests", href: "/buyer/requests", icon: FileText, badge: 2 },
-  { label: "Wishlist", href: "/buyer/wishlist", icon: Heart, badge: 3 },
-  { label: "Wallet", href: "/buyer/wallet", icon: Wallet },
-  { label: "Active Trades", href: "/buyer/trades", icon: RefreshCw, badge: 1 },
-  { label: "Reviews", href: "/buyer/reviews", icon: Star },
-  { label: "Disputes", href: "/buyer/disputes", icon: AlertCircle },
-];
 
 const quickActions = [
   { label: "Browse Products", href: "/browse", icon: Search },
@@ -46,7 +37,26 @@ const quickActions = [
 
 export function BuyerSidebar({ isOpen, onClose }: BuyerSidebarProps) {
   const pathname = usePathname();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
+  const { count: unreadMessages } = useUnreadMessageCount(user?.id ?? null);
+  const { stats: orderStats } = useOrderStats(user?.id ?? null, "buyer");
+  const { requests } = useMyRequests(user?.id ?? null);
+
+  // Count active requests
+  const activeRequestsCount = requests?.filter(r => r.status === "active").length || 0;
+
+  // Build nav items with dynamic badges
+  const mainNavItems = [
+    { label: "Overview", href: "/buyer", icon: Home },
+    { label: "Messages", href: "/buyer/messages", icon: MessageSquare, badge: unreadMessages || undefined },
+    { label: "My Purchases", href: "/buyer/purchases", icon: ShoppingBag, badge: orderStats.pending > 0 ? orderStats.pending : undefined },
+    { label: "My Requests", href: "/buyer/requests", icon: FileText, badge: activeRequestsCount > 0 ? activeRequestsCount : undefined },
+    { label: "Wishlist", href: "/buyer/wishlist", icon: Heart },
+    { label: "Wallet", href: "/buyer/wallet", icon: Wallet },
+    { label: "Active Trades", href: "/buyer/trades", icon: RefreshCw, badge: orderStats.processing > 0 ? orderStats.processing : undefined },
+    { label: "Reviews", href: "/buyer/reviews", icon: Star },
+    { label: "Disputes", href: "/buyer/disputes", icon: AlertCircle, badge: orderStats.disputed > 0 ? orderStats.disputed : undefined },
+  ];
 
   const isActive = (href: string) => {
     if (href === "/buyer") {

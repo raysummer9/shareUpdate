@@ -64,3 +64,24 @@ export {
   type ReviewFilters,
 } from "./use-reviews";
 
+// Messaging
+export {
+  useConversations,
+  useMessages,
+  useMessageMutations,
+  useUnreadMessageCount,
+  type ConversationWithDetails,
+  type MessageWithSender,
+} from "./use-messages";
+
+// Notifications
+export {
+  useNotifications,
+  useUnreadNotificationCount,
+  useNotificationMutations,
+  createOrderNotification,
+  createMessageNotification,
+  createReviewNotification,
+  type NotificationFilters,
+} from "./use-notifications";
+
