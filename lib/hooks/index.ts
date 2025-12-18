@@ -85,3 +85,52 @@ export {
   type NotificationFilters,
 } from "./use-notifications";
 
+// Disputes
+export {
+  useDisputes,
+  useDispute,
+  useDisputeMutations,
+  useDisputeStats,
+  type DisputeWithDetails,
+  type DisputeMessageWithSender,
+  type DisputeFilters,
+  type DisputeReason,
+} from "./use-disputes";
+
+// Wishlist
+export {
+  useWishlist,
+  useIsInWishlist,
+  useWishlistMutations,
+  useWishlistCount,
+  usePriceAlerts,
+  type WishlistItemWithListing,
+} from "./use-wishlist";
+
+// File Uploads
+export {
+  useFileUpload,
+  useAvatarUpload,
+  useListingImageUpload,
+  useMessageAttachmentUpload,
+  useDisputeEvidenceUpload,
+  useFileDelete,
+  BUCKETS,
+  validateFile,
+  type BucketName,
+  type UploadResult,
+  type UploadOptions,
+} from "./use-file-upload";
+
+// Search
+export {
+  useListingSearch,
+  useQuickSearch,
+  useSellerSearch,
+  useRequestSearch,
+  useRecentSearches,
+  type SearchResult,
+  type ListingSearchResult,
+  type SearchFilters,
+} from "./use-search";
+

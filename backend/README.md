@@ -785,11 +785,11 @@ The frontend will connect to Supabase using:
 - [x] Helper functions for order, message, and review notifications
 - [ ] Connect messages pages to real data (UI integration pending)
 
-### Phase 6: Advanced Features (Pending)
-- [ ] Dispute management hooks
-- [ ] Search optimization (full-text search)
-- [ ] File uploads (Supabase Storage integration)
-- [ ] Wishlist hooks
+### Phase 6: Advanced Features ✅ COMPLETED
+- [x] Dispute management hooks (useDisputes, useDispute, useDisputeMutations, useDisputeStats)
+- [x] Search optimization hooks (useListingSearch, useQuickSearch, useSellerSearch, useRequestSearch)
+- [x] File uploads (Supabase Storage integration with specialized upload hooks)
+- [x] Wishlist hooks (useWishlist, useIsInWishlist, useWishlistMutations, usePriceAlerts)
 
 ### Phase 7: Payment Integration (Pending)
 - [ ] Payment gateway integration (Paystack/Flutterwave)
