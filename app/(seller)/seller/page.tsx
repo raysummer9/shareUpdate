@@ -17,8 +17,13 @@ import {
   FileText,
   Search,
   Crown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth/auth-context";
+import { useWallet, useWalletTransactions } from "@/lib/hooks/use-wallet";
+import { useOrders, useOrderStats } from "@/lib/hooks/use-orders";
+import { useMyListings } from "@/lib/hooks/use-listings";
 
 // Stats Card Component
 function StatsCard({
@@ -267,12 +272,52 @@ function ListingItem({
 }
 
 export default function SellerDashboardPage() {
+  const { user, profile, loading: authLoading } = useAuth();
+  const { wallet, loading: walletLoading } = useWallet(user?.id ?? null);
+  const { transactions, loading: txLoading } = useWalletTransactions(wallet?.id ?? null, { limit: 3 });
+  const { stats: orderStats, loading: statsLoading } = useOrderStats(user?.id ?? null, "seller");
+  const { orders, loading: ordersLoading } = useOrders({ seller_id: user?.id ?? undefined, limit: 3 });
+  const { listings, loading: listingsLoading } = useMyListings(user?.id ?? null);
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Show loading state
+  if (authLoading || walletLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+      </div>
+    );
+  }
+
+  const firstName = profile?.full_name?.split(" ")[0] || profile?.username || "Seller";
+  const availableBalance = wallet?.available_balance || 0;
+  const pendingBalance = wallet?.pending_balance || 0;
+  const totalEarned = wallet?.total_earned || 0;
+  const activeListings = listings?.filter(l => l.status === "active") || [];
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Welcome back, John!
+          Welcome back, {firstName}!
         </h1>
         <p className="text-gray-600 mt-1">
           Here's what's happening with your account today.
@@ -285,8 +330,8 @@ export default function SellerDashboardPage() {
           icon={Wallet}
           iconBg="bg-red-500"
           label="Total Balance"
-          value="₦125,450"
-          subtext="+12.5% from last month"
+          value={formatCurrency(availableBalance)}
+          subtext={pendingBalance > 0 ? `${formatCurrency(pendingBalance)} pending` : "Available to withdraw"}
           isHighlighted={true}
           badge="↑"
           badgeColor="bg-white/20 text-white"
@@ -295,17 +340,17 @@ export default function SellerDashboardPage() {
           icon={ShoppingBag}
           iconBg="bg-blue-500"
           label="Active Orders"
-          value="8"
-          subtext="3 pending delivery"
-          badge="+3"
+          value={String(orderStats.pending + orderStats.processing)}
+          subtext={`${orderStats.pending} awaiting delivery`}
+          badge={orderStats.pending > 0 ? `+${orderStats.pending}` : undefined}
           badgeColor="bg-blue-100 text-blue-700"
         />
         <StatsCard
           icon={TrendingUp}
           iconBg="bg-yellow-500"
           label="Total Sales"
-          value="45"
-          subtext="This month"
+          value={String(profile?.total_sales || 0)}
+          subtext={`${formatCurrency(totalEarned)} earned`}
           badge="+8%"
           badgeColor="bg-green-100 text-green-700"
         />
@@ -313,9 +358,9 @@ export default function SellerDashboardPage() {
           icon={Star}
           iconBg="bg-yellow-500"
           label="Seller Rating"
-          value="4.9"
-          subtext="Based on 234 reviews"
-          badge="Top"
+          value={profile?.rating ? profile.rating.toFixed(1) : "N/A"}
+          subtext={`Based on ${profile?.total_reviews || 0} reviews`}
+          badge={profile?.seller_level || undefined}
           badgeColor="bg-yellow-100 text-yellow-700"
         />
       </div>
@@ -328,21 +373,23 @@ export default function SellerDashboardPage() {
           <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">Wallet Overview</h2>
-              <Button className="bg-green-500 hover:bg-green-600 text-white text-sm h-9">
-                <Plus className="h-4 w-4 mr-1" /> Add Funds
-              </Button>
+              <Link href="/seller/wallet">
+                <Button className="bg-green-500 hover:bg-green-600 text-white text-sm h-9">
+                  <Plus className="h-4 w-4 mr-1" /> Withdraw
+                </Button>
+              </Link>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <WalletCard
-                type="NGN Balance"
+                type="Available Balance"
                 symbol="₦"
-                balance="₦125,450"
+                balance={formatCurrency(availableBalance)}
                 symbolBg="bg-green-500"
               />
               <WalletCard
-                type="Crypto Balance"
-                symbol="₿"
-                balance="$450.00"
+                type="Pending Balance"
+                symbol="₦"
+                balance={formatCurrency(pendingBalance)}
                 symbolBg="bg-orange-500"
               />
             </div>
@@ -350,35 +397,37 @@ export default function SellerDashboardPage() {
 
           {/* Recent Transactions */}
           <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Transactions</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
+              <Link href="/seller/wallet" className="text-sm text-red-600 hover:text-red-700 font-medium">
+                View All
+              </Link>
+            </div>
             <div className="divide-y divide-gray-100">
-              <TransactionItem
-                icon={ArrowDownLeft}
-                iconBg="bg-green-100"
-                iconColor="text-green-600"
-                title="Funds Added"
-                date="Jan 15, 2024"
-                amount="+₦50,000"
-                amountColor="text-green-600"
-              />
-              <TransactionItem
-                icon={ArrowUpRight}
-                iconBg="bg-red-100"
-                iconColor="text-red-600"
-                title="Purchase - Instagram Account"
-                date="Jan 14, 2024"
-                amount="-₦45,000"
-                amountColor="text-red-600"
-              />
-              <TransactionItem
-                icon={RefreshCw}
-                iconBg="bg-blue-100"
-                iconColor="text-blue-600"
-                title="Escrow - Web Development"
-                date="Jan 13, 2024"
-                amount="₦75,000"
-                amountColor="text-gray-900"
-              />
+              {txLoading ? (
+                <div className="py-8 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+                </div>
+              ) : transactions.length > 0 ? (
+                transactions.map((tx) => {
+                  const isCredit = tx.amount > 0;
+                  const isEscrow = tx.type === "escrow_hold" || tx.type === "escrow_release";
+                  return (
+                    <TransactionItem
+                      key={tx.id}
+                      icon={isEscrow ? RefreshCw : isCredit ? ArrowDownLeft : ArrowUpRight}
+                      iconBg={isEscrow ? "bg-blue-100" : isCredit ? "bg-green-100" : "bg-red-100"}
+                      iconColor={isEscrow ? "text-blue-600" : isCredit ? "text-green-600" : "text-red-600"}
+                      title={tx.description || tx.type.replace(/_/g, " ")}
+                      date={formatDate(tx.created_at!)}
+                      amount={`${isCredit ? "+" : ""}${formatCurrency(tx.amount)}`}
+                      amountColor={isEscrow ? "text-gray-900" : isCredit ? "text-green-600" : "text-red-600"}
+                    />
+                  );
+                })
+              ) : (
+                <p className="py-8 text-center text-gray-500 text-sm">No transactions yet</p>
+              )}
             </div>
           </div>
         </div>
@@ -454,39 +503,40 @@ export default function SellerDashboardPage() {
             </Link>
           </div>
           <div>
-            <OrderItem
-              image="/placeholder-image.png"
-              title="Instagram Account - Fashion"
-              subtitle="12.5K followers"
-              price="₦45,000"
-              status="Delivered"
-              statusColor="bg-green-100 text-green-700"
-              date="Jan 14, 2024"
-              actionLabel="★ Rate"
-              actionColor="text-yellow-600"
-            />
-            <OrderItem
-              image="/placeholder-image.png"
-              title="YouTube Channel - Tech"
-              subtitle="25K subscribers"
-              price="₦120,000"
-              status="In Progress"
-              statusColor="bg-yellow-100 text-yellow-700"
-              date="Jan 13, 2024"
-              actionLabel="View"
-              actionColor="text-red-600"
-            />
-            <OrderItem
-              image="/placeholder-image.png"
-              title="Landing Page Development"
-              subtitle="Web Development Service"
-              price="₦75,000"
-              status="Escrow"
-              statusColor="bg-blue-100 text-blue-700"
-              date="Jan 12, 2024"
-              actionLabel="View"
-              actionColor="text-red-600"
-            />
+            {ordersLoading ? (
+              <div className="py-8 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+              </div>
+            ) : orders.length > 0 ? (
+              orders.map((order) => {
+                const statusConfig: Record<string, { color: string; label: string }> = {
+                  pending: { color: "bg-yellow-100 text-yellow-700", label: "Pending" },
+                  paid: { color: "bg-blue-100 text-blue-700", label: "Paid" },
+                  processing: { color: "bg-yellow-100 text-yellow-700", label: "In Progress" },
+                  delivered: { color: "bg-green-100 text-green-700", label: "Delivered" },
+                  completed: { color: "bg-green-100 text-green-700", label: "Completed" },
+                  cancelled: { color: "bg-gray-100 text-gray-700", label: "Cancelled" },
+                  disputed: { color: "bg-red-100 text-red-700", label: "Disputed" },
+                };
+                const status = statusConfig[order.status] || statusConfig.pending;
+                return (
+                  <OrderItem
+                    key={order.id}
+                    image={order.listing?.images?.[0] || "/placeholder-image.png"}
+                    title={order.listing?.title || "Order"}
+                    subtitle={`Order ${order.order_number}`}
+                    price={formatCurrency(order.seller_receives)}
+                    status={status.label}
+                    statusColor={status.color}
+                    date={formatDate(order.created_at!)}
+                    actionLabel="View"
+                    actionColor="text-red-600"
+                  />
+                );
+              })
+            ) : (
+              <p className="py-8 text-center text-gray-500 text-sm">No orders yet</p>
+            )}
           </div>
         </div>
 
@@ -502,27 +552,31 @@ export default function SellerDashboardPage() {
             </Link>
           </div>
           <div>
-            <ListingItem
-              image="/placeholder-image.png"
-              title="Twitter Account - Crypto"
-              subtitle="8.2K followers"
-              price="₦35,000"
-              views={24}
-            />
-            <ListingItem
-              image="/placeholder-image.png"
-              title="TikTok Account - Comedy"
-              subtitle="50K followers"
-              price="₦85,000"
-              views={156}
-            />
-            <ListingItem
-              image="/placeholder-image.png"
-              title="Social Media Growth Service"
-              subtitle="Instagram Growth"
-              price="₦75,000"
-              views={89}
-            />
+            {listingsLoading ? (
+              <div className="py-8 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+              </div>
+            ) : activeListings.length > 0 ? (
+              activeListings.slice(0, 3).map((listing) => (
+                <ListingItem
+                  key={listing.id}
+                  image={listing.images?.[0] || "/placeholder-image.png"}
+                  title={listing.title}
+                  subtitle={listing.platform || listing.type}
+                  price={formatCurrency(listing.price)}
+                  views={listing.views || 0}
+                />
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-gray-500 text-sm mb-3">No active listings yet</p>
+                <Link href="/seller/list-product">
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    <Plus className="h-4 w-4 mr-1" /> Create Listing
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

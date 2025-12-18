@@ -13,8 +13,14 @@ import {
   CreditCard,
   Star,
   RefreshCcw,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth/auth-context";
+import { useWallet } from "@/lib/hooks/use-wallet";
+import { useOrders, useOrderStats } from "@/lib/hooks/use-orders";
+import { useMyRequests } from "@/lib/hooks/use-requests";
+import { useListings } from "@/lib/hooks/use-listings";
 
 // Stats Card Component
 function StatsCard({
@@ -324,12 +330,51 @@ function RecommendedItem({
 }
 
 export default function BuyerDashboardPage() {
+  const { user, profile, loading: authLoading } = useAuth();
+  const { wallet, loading: walletLoading } = useWallet(user?.id ?? null);
+  const { stats: orderStats, loading: statsLoading } = useOrderStats(user?.id ?? null, "buyer");
+  const { orders, loading: ordersLoading } = useOrders({ buyer_id: user?.id ?? undefined, limit: 4 });
+  const { requests, loading: requestsLoading } = useMyRequests(user?.id ?? null);
+  const { listings: recommended, loading: recommendedLoading } = useListings({ status: "active", limit: 3 });
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Show loading state
+  if (authLoading || walletLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+      </div>
+    );
+  }
+
+  const firstName = profile?.full_name?.split(" ")[0] || profile?.username || "Buyer";
+  const availableBalance = wallet?.available_balance || 0;
+  const activeRequests = requests?.filter(r => r.status === "active") || [];
+  const totalBids = activeRequests.reduce((sum, r) => sum + (r.bid_count || 0), 0);
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Welcome back, Michael!
+          Welcome back, {firstName}!
         </h1>
         <p className="text-gray-600 mt-1">
           Here's an overview of your recent activity and purchases.
@@ -342,7 +387,7 @@ export default function BuyerDashboardPage() {
           icon={Wallet}
           iconBg="bg-red-500"
           label="Wallet Balance"
-          value="₦85,250"
+          value={formatCurrency(availableBalance)}
           subtext="Available for purchases"
           isHighlighted={true}
           badge="↑"
@@ -352,27 +397,27 @@ export default function BuyerDashboardPage() {
           icon={ShoppingBag}
           iconBg="bg-green-500"
           label="Total Purchases"
-          value="12"
-          subtext="5 pending delivery"
-          badge="+2"
+          value={String(profile?.total_purchases || 0)}
+          subtext={`${orderStats.pending + orderStats.processing} pending`}
+          badge={orderStats.pending > 0 ? `+${orderStats.pending}` : undefined}
           badgeColor="bg-blue-100 text-blue-700"
         />
         <StatsCard
           icon={FileText}
           iconBg="bg-blue-500"
           label="Active Requests"
-          value="2"
-          subtext="8 bids received"
-          badge="Active"
+          value={String(activeRequests.length)}
+          subtext={`${totalBids} bids received`}
+          badge={activeRequests.length > 0 ? "Active" : undefined}
           badgeColor="bg-green-100 text-green-700"
         />
         <StatsCard
           icon={Heart}
           iconBg="bg-pink-500"
           label="Wishlist Items"
-          value="3"
-          subtext="1 price drop"
-          badge="New"
+          value="0"
+          subtext="Save items for later"
+          badge={undefined}
           badgeColor="bg-red-100 text-red-700"
         />
       </div>
@@ -392,46 +437,52 @@ export default function BuyerDashboardPage() {
               </Link>
             </div>
             <div>
-              <PurchaseItem
-                image="/placeholder-image.png"
-                title="Instagram Account - Fashion Niche"
-                subtitle="12.5K followers • High engagement"
-                price="₦45,000"
-                status="Delivered"
-                statusColor="bg-green-100 text-green-700"
-                date="Jan 15, 2024"
-                action={{ label: "★ Rate", color: "bg-yellow-500 hover:bg-yellow-600 text-white", variant: "button" }}
-              />
-              <PurchaseItem
-                image="/placeholder-image.png"
-                title="YouTube Channel - Tech Reviews"
-                subtitle="25K subscribers • Monetized"
-                price="₦120,000"
-                status="Processing"
-                statusColor="bg-yellow-100 text-yellow-700"
-                date="Jan 14, 2024"
-                action={{ label: "Track", color: "bg-gray-100 hover:bg-gray-200 text-gray-700", variant: "button" }}
-              />
-              <PurchaseItem
-                image="/placeholder-image.png"
-                title="Website Development Service"
-                subtitle="Landing page with responsive design"
-                price="₦75,000"
-                status="In Escrow"
-                statusColor="bg-blue-100 text-blue-700"
-                date="Jan 13, 2024"
-                action={{ label: "View Trade", color: "bg-blue-600 hover:bg-blue-700 text-white", variant: "button" }}
-              />
-              <PurchaseItem
-                image="/placeholder-image.png"
-                title="Twitter Account - Crypto News"
-                subtitle="8.2K followers • Active community"
-                price="₦35,000"
-                status="Delivered"
-                statusColor="bg-green-100 text-green-700"
-                date="Jan 12, 2024"
-                action={{ label: "", color: "", variant: "stars" }}
-              />
+              {ordersLoading ? (
+                <div className="py-8 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+                </div>
+              ) : orders.length > 0 ? (
+                orders.map((order) => {
+                  const statusConfig: Record<string, { color: string; label: string }> = {
+                    pending: { color: "bg-yellow-100 text-yellow-700", label: "Pending" },
+                    paid: { color: "bg-blue-100 text-blue-700", label: "In Escrow" },
+                    processing: { color: "bg-yellow-100 text-yellow-700", label: "Processing" },
+                    delivered: { color: "bg-green-100 text-green-700", label: "Delivered" },
+                    completed: { color: "bg-green-100 text-green-700", label: "Completed" },
+                    cancelled: { color: "bg-gray-100 text-gray-700", label: "Cancelled" },
+                    disputed: { color: "bg-red-100 text-red-700", label: "Disputed" },
+                  };
+                  const status = statusConfig[order.status || "pending"] || statusConfig.pending;
+                  const action = order.status === "delivered" 
+                    ? { label: "★ Rate", color: "bg-yellow-500 hover:bg-yellow-600 text-white", variant: "button" as const }
+                    : order.status === "paid" || order.status === "processing"
+                    ? { label: "Track", color: "bg-gray-100 hover:bg-gray-200 text-gray-700", variant: "button" as const }
+                    : undefined;
+                  
+                  return (
+                    <PurchaseItem
+                      key={order.id}
+                      image={order.listing?.images?.[0] || "/placeholder-image.png"}
+                      title={order.listing?.title || "Order"}
+                      subtitle={`Order ${order.order_number}`}
+                      price={formatCurrency(order.total_amount)}
+                      status={status.label}
+                      statusColor={status.color}
+                      date={formatDate(order.created_at!)}
+                      action={action}
+                    />
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center">
+                  <p className="text-gray-500 text-sm mb-3">No purchases yet</p>
+                  <Link href="/browse">
+                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                      <Search className="h-4 w-4 mr-1" /> Browse Products
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -516,31 +567,46 @@ export default function BuyerDashboardPage() {
             </Link>
           </div>
           <div>
-            <RequestItem
-              title="Need 12K Instagram Account"
-              subtitle="Fashion or lifestyle niche preferred"
-              status="Active"
-              statusColor="bg-green-100 text-green-700"
-              bids={5}
-              time="2 days ago"
-            />
-            <RequestItem
-              title="Website Development Needed"
-              subtitle="E-commerce site with payment integration"
-              status="Active"
-              statusColor="bg-green-100 text-green-700"
-              bids={3}
-              time="1 day ago"
-            />
-            <RequestItem
-              title="YouTube Channel - Gaming"
-              subtitle="Minimum 20K subscribers required"
-              status="Completed"
-              statusColor="bg-gray-100 text-gray-600"
-              time="5 days ago"
-              isCompleted={true}
-              isPurchased={true}
-            />
+            {requestsLoading ? (
+              <div className="py-8 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+              </div>
+            ) : requests.length > 0 ? (
+              requests.slice(0, 3).map((request) => {
+                const statusConfig: Record<string, { color: string }> = {
+                  active: { color: "bg-green-100 text-green-700" },
+                  completed: { color: "bg-gray-100 text-gray-600" },
+                  cancelled: { color: "bg-red-100 text-red-600" },
+                  expired: { color: "bg-gray-100 text-gray-500" },
+                };
+                const requestStatus = request.status || "active";
+                const statusStyle = statusConfig[requestStatus] || statusConfig.active;
+                const timeAgo = new Date(request.created_at!).toLocaleDateString();
+                
+                return (
+                  <RequestItem
+                    key={request.id}
+                    title={request.title}
+                    subtitle={`Budget: ${formatCurrency(request.budget_min)} - ${formatCurrency(request.budget_max)}`}
+                    status={requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
+                    statusColor={statusStyle.color}
+                    bids={request.bid_count || 0}
+                    time={timeAgo}
+                    isCompleted={requestStatus === "completed"}
+                    isPurchased={requestStatus === "completed"}
+                  />
+                );
+              })
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-gray-500 text-sm mb-3">No requests yet</p>
+                <Link href="/buyer/post-request">
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    <PlusCircle className="h-4 w-4 mr-1" /> Post Request
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -548,36 +614,38 @@ export default function BuyerDashboardPage() {
         <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">Recommended for You</h2>
-            <button className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+            <Link href="/browse" className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
               <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </button>
+              View All
+            </Link>
           </div>
           <div>
-            <RecommendedItem
-              image="/placeholder-image.png"
-              title="Instagram - Beauty Niche"
-              subtitle="15K followers • High engagement"
-              price="₦52,000"
-              rating={5}
-              reviews={45}
-            />
-            <RecommendedItem
-              image="/placeholder-image.png"
-              title="Facebook Page - Business"
-              subtitle="30K likes • Verified page"
-              price="₦95,000"
-              rating={4}
-              reviews={28}
-            />
-            <RecommendedItem
-              image="/placeholder-image.png"
-              title="Social Media Management"
-              subtitle="Monthly service package"
-              price="₦45,000"
-              rating={5}
-              reviews={67}
-            />
+            {recommendedLoading ? (
+              <div className="py-8 text-center">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+              </div>
+            ) : recommended.length > 0 ? (
+              recommended.map((listing) => (
+                <RecommendedItem
+                  key={listing.id}
+                  image={listing.images?.[0] || "/placeholder-image.png"}
+                  title={listing.title}
+                  subtitle={listing.platform || listing.type}
+                  price={formatCurrency(listing.price)}
+                  rating={listing.rating || 0}
+                  reviews={listing.review_count || 0}
+                />
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-gray-500 text-sm mb-3">No listings available</p>
+                <Link href="/browse">
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    <Search className="h-4 w-4 mr-1" /> Browse All
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
