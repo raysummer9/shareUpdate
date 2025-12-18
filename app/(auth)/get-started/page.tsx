@@ -19,7 +19,9 @@ import {
   Star,
   UserPlus,
   Check,
-  X
+  X,
+  ShoppingBag,
+  Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -37,6 +39,7 @@ export default function GetStartedPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [receiveUpdates, setReceiveUpdates] = useState(false);
+  const [accountType, setAccountType] = useState<"buyer" | "seller" | null>(null);
 
   // Password validation checks
   const passwordChecks = {
@@ -174,6 +177,79 @@ export default function GetStartedPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-white text-gray-500">Or continue with email</span>
+              </div>
+            </div>
+
+            {/* Choose Your Path */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Choose your path <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAccountType("buyer")}
+                  className={cn(
+                    "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    accountType === "buyer"
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  )}
+                >
+                  {accountType === "buyer" && (
+                    <div className="absolute top-2 right-2">
+                      <Check className="h-5 w-5 text-red-600" />
+                    </div>
+                  )}
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center",
+                    accountType === "buyer" ? "bg-red-100" : "bg-gray-100"
+                  )}>
+                    <ShoppingBag className={cn(
+                      "h-6 w-6",
+                      accountType === "buyer" ? "text-red-600" : "text-gray-500"
+                    )} />
+                  </div>
+                  <div className="text-center">
+                    <p className={cn(
+                      "font-semibold text-sm",
+                      accountType === "buyer" ? "text-red-600" : "text-gray-900"
+                    )}>Buyer</p>
+                    <p className="text-xs text-gray-500">Buy products & services</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountType("seller")}
+                  className={cn(
+                    "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    accountType === "seller"
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  )}
+                >
+                  {accountType === "seller" && (
+                    <div className="absolute top-2 right-2">
+                      <Check className="h-5 w-5 text-red-600" />
+                    </div>
+                  )}
+                  <div className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center",
+                    accountType === "seller" ? "bg-red-100" : "bg-gray-100"
+                  )}>
+                    <Store className={cn(
+                      "h-6 w-6",
+                      accountType === "seller" ? "text-red-600" : "text-gray-500"
+                    )} />
+                  </div>
+                  <div className="text-center">
+                    <p className={cn(
+                      "font-semibold text-sm",
+                      accountType === "seller" ? "text-red-600" : "text-gray-900"
+                    )}>Seller</p>
+                    <p className="text-xs text-gray-500">Sell products & services</p>
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -399,7 +475,7 @@ export default function GetStartedPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={!agreeTerms}
+                disabled={!agreeTerms || !accountType}
                 className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 h-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <UserPlus className="h-5 w-5 mr-2" />
