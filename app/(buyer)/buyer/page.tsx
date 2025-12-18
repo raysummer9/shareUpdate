@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { useOrders, useOrderStats } from "@/lib/hooks/use-orders";
 import { useMyRequests } from "@/lib/hooks/use-requests";
 import { useListings } from "@/lib/hooks/use-listings";
+import { useWishlist, useWishlistCount } from "@/lib/hooks/use-wishlist";
 
 // Stats Card Component
 function StatsCard({
@@ -334,6 +335,8 @@ export default function BuyerDashboardPage() {
   const { orders, loading: ordersLoading } = useOrders({ buyer_id: user?.id ?? undefined, limit: 4 });
   const { requests, loading: requestsLoading } = useMyRequests(user?.id ?? null);
   const { listings: recommended, loading: recommendedLoading } = useListings({ status: "active", limit: 3 });
+  const { items: wishlistItems, loading: wishlistLoading } = useWishlist(user?.id ?? null);
+  const { count: wishlistCount } = useWishlistCount(user?.id ?? null);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -413,9 +416,9 @@ export default function BuyerDashboardPage() {
           icon={Heart}
           iconBg="bg-pink-500"
           label="Wishlist Items"
-          value="0"
+          value={String(wishlistCount)}
           subtext="Save items for later"
-          badge={undefined}
+          badge={wishlistCount > 0 ? "View" : undefined}
           badgeColor="bg-red-100 text-red-700"
         />
       </div>
@@ -527,25 +530,31 @@ export default function BuyerDashboardPage() {
               </Link>
             </div>
             <div>
-              <WishlistItem
-                image="/placeholder-image.png"
-                title="TikTok Account"
-                subtitle="50K followers"
-                price="₦85,000"
-              />
-              <WishlistItem
-                image="/placeholder-image.png"
-                title="Logo Design"
-                subtitle="Professional service"
-                price="₦25,000"
-                discount="-20%"
-              />
-              <WishlistItem
-                image="/placeholder-image.png"
-                title="LinkedIn Account"
-                subtitle="5K connections"
-                price="₦55,000"
-              />
+              {wishlistLoading ? (
+                <div className="py-8 text-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 mx-auto" />
+                </div>
+              ) : wishlistItems.length > 0 ? (
+                wishlistItems.slice(0, 3).map((item) => (
+                  <WishlistItem
+                    key={item.id}
+                    image={item.listing?.images?.[0] || "/placeholder-image.png"}
+                    title={item.listing?.title || "Item"}
+                    subtitle={item.listing?.platform || item.listing?.type || ""}
+                    price={formatCurrency(item.listing?.price || 0)}
+                  />
+                ))
+              ) : (
+                <div className="py-6 text-center">
+                  <Heart className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm mb-3">No saved items</p>
+                  <Link href="/browse">
+                    <Button size="sm" variant="outline">
+                      Browse Products
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
