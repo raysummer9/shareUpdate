@@ -404,10 +404,10 @@ export default function SellerDashboardPage() {
               />
               <QuickActionButton
                 icon={FileText}
-                title="Post Request"
-                subtitle="Get what you need"
+                title="View Requests"
+                subtitle="Bid on buyer requests"
                 bgColor="bg-orange-500"
-                href="/seller/post-request"
+                href="/seller/requests"
               />
               <QuickActionButton
                 icon={Search}
