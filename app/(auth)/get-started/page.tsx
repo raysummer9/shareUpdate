@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -21,12 +22,15 @@ import {
   Check,
   X,
   ShoppingBag,
-  Store
+  Store,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 export default function GetStartedPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -40,6 +44,8 @@ export default function GetStartedPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [receiveUpdates, setReceiveUpdates] = useState(false);
   const [accountType, setAccountType] = useState<"buyer" | "seller" | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Password validation checks
   const passwordChecks = {
@@ -50,15 +56,78 @@ export default function GetStartedPage() {
     hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password),
   };
 
+  const allPasswordChecksPass = Object.values(passwordChecks).every(Boolean);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // TODO: Implement registration logic
+    setError(null);
+
+    // Validation
+    if (!accountType) {
+      setError("Please select whether you want to be a Buyer or Seller");
+      return;
+    }
+
+    if (!allPasswordChecksPass) {
+      setError("Please ensure your password meets all requirements");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const supabase = createClient();
+
+      // Sign up with Supabase Auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            username: formData.username,
+            phone: formData.phone,
+            role: accountType,
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      if (data.user) {
+        // Redirect based on account type
+        router.push(accountType === "seller" ? "/seller" : "/buyer");
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+      if (err instanceof Error) {
+        // Handle specific Supabase errors
+        if (err.message.includes("already registered")) {
+          setError("This email is already registered. Please sign in instead.");
+        } else if (err.message.includes("invalid")) {
+          setError("Please check your email format and try again.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const features = [
@@ -472,14 +541,30 @@ export default function GetStartedPage() {
                 </label>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={!agreeTerms || !accountType}
+                disabled={!agreeTerms || !accountType || isLoading}
                 className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 h-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <UserPlus className="h-5 w-5 mr-2" />
-                Create Account
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-5 w-5 mr-2" />
+                    Create Account
+                  </>
+                )}
               </Button>
             </form>
 

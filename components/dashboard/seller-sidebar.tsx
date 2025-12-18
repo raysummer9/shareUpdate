@@ -19,6 +19,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/auth-context";
 
 interface SellerSidebarProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ const quickActions = [
 
 export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
   const pathname = usePathname();
+  const { profile } = useAuth();
 
   const isActive = (href: string) => {
     if (href === "/seller") {
@@ -52,6 +54,11 @@ export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
     }
     return pathname.startsWith(href);
   };
+
+  // Get display name from profile or fallback
+  const displayName = profile?.full_name || profile?.username || "User";
+  const isVerified = profile?.is_verified || false;
+  const avatarUrl = profile?.avatar_url || "/placeholder-image.png";
 
   return (
     <>
@@ -155,7 +162,7 @@ export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden">
               <Image
-                src="/placeholder-image.png"
+                src={avatarUrl}
                 alt="User Avatar"
                 width={40}
                 height={40}
@@ -163,8 +170,10 @@ export function SellerSidebar({ isOpen, onClose }: SellerSidebarProps) {
               />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">John Doe</p>
-              <p className="text-xs text-gray-500">Verified Seller</p>
+              <p className="text-sm font-semibold text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-500">
+                {isVerified ? "Verified Seller" : "Seller"}
+              </p>
             </div>
           </div>
         </div>

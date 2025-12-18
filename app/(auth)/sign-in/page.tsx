@@ -2,19 +2,69 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Sign in:", { email, password, rememberMe });
-    // TODO: Implement sign in logic
+    setError(null);
+    setLoading(true);
+
+    try {
+      // Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (authData.user) {
+        // Fetch the user's profile to get their role
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", authData.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          // Default to buyer if profile fetch fails
+          router.push("/buyer");
+          return;
+        }
+
+        // Redirect based on user role
+        if (profile?.role === "seller") {
+          router.push("/seller");
+        } else if (profile?.role === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/buyer");
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,6 +91,13 @@ export default function SignInPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
+                {error}
+              </div>
+            )}
+
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -106,9 +163,17 @@ export default function SignInPage() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 h-auto text-base rounded-lg"
+              disabled={loading}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 h-auto text-base rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
 
