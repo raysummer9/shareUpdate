@@ -23,11 +23,8 @@ export function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="relative w-full bg-white">
-      {/* Top blue line */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-blue-500" />
-      
-      <nav className="container mx-auto px-4 py-4 flex items-center justify-between relative">
+    <header className="w-full bg-white">
+      <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
           <Image
